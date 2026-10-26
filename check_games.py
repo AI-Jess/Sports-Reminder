@@ -46,12 +46,19 @@ def short_name(team: dict, league: dict) -> str:
     return team.get("location") or team.get("displayName", "")
 
 
+def tv_channels(comp: dict) -> str:
+    """Keep it short: the first two channels, minus the always-there League Pass."""
+    names = [n for b in comp.get("broadcasts", []) for n in b.get("names", [])]
+    names = [n for n in names if n != "WNBA League Pass"]
+    return ", ".join(names[:2]) or "League Pass / TBD"
+
+
 def big_game_label(event: dict, comp: dict, rule: dict) -> str | None:
     """Return a round label if this game qualifies for everyone, else None."""
     headline = (comp.get("notes") or [{}])[0].get("headline", "")
     if rule.get("all_playoff_games"):
         if event.get("season", {}).get("type") == 3:  # ESPN: 3 = postseason
-            return headline or "Playoffs"
+            return headline.removeprefix("WNBA ") or "Playoffs"
         return None
     if rule.get("note_contains") and rule["note_contains"] in headline:
         return next((r for r in rule.get("rounds", []) if r in headline), None)
@@ -65,7 +72,7 @@ def league_lines(league: dict, data: dict, debug: bool) -> list:
     for event in data.get("events", []):
         comp = event["competitions"][0]
         teams = [c["team"] for c in comp["competitors"]]
-        tv = ", ".join(n for b in comp.get("broadcasts", []) for n in b.get("names", [])) or "TV TBD"
+        tv = tv_channels(comp)
         label = big_game_label(event, comp, rule)
         is_mine = any(team_names(t) & mine for t in teams)
 
