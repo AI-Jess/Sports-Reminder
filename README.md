@@ -1,10 +1,10 @@
 # Sports Reminder 🏀
 
-Every morning, a free GitHub job checks ESPN for women's college basketball games. If any match, it posts one message to Discord, and a tiny iPhone Shortcut texts the same message to the group chat.
+Every morning, a free GitHub job checks ESPN for women's college basketball and WNBA games. If any match, it posts one message to Discord, and a tiny iPhone Shortcut texts the same message to the group chat.
 
-**What counts as a match**
-- Any game with **UConn, USC or South Carolina**, all season.
-- Every NCAA tournament game from the **Sweet 16 through the National Championship** (the Women's NIT and other tournaments are skipped).
+**What counts as a match** (set in `settings.json`)
+- College: any **UConn, USC, South Carolina or LSU** game, plus every NCAA tournament game from the **Sweet 16 on** (the Women's NIT is skipped).
+- WNBA: any **Fever, Wings or Lynx** game, plus **every playoff game**.
 
 **What the message looks like** (real output for April 3, 2026):
 
@@ -75,7 +75,12 @@ The GitHub side already runs daily on its own.
 
 ## Changing teams
 
-Edit `MY_TEAMS` near the top of `check_games.py` (or ask Claude to). Keep the pipes around each name: `|UConn|USC|South Carolina|Iowa|`. Names are ESPN's short team names ("UConn", not "Connecticut"). Nothing on the phone changes.
+Edit `settings.json` on GitHub (pencil icon) or ask Claude. Each league has a `my_teams` list:
+
+- College: `"my_teams": ["UConn", "USC", "South Carolina", "LSU"]`
+- WNBA: `"my_teams": ["Indiana Fever", "Dallas Wings", "Minnesota Lynx"]`
+
+Add a name inside the brackets, in quotes, separated by commas. Nothing on the phone changes. A new league (e.g. NBA) is one more block in the same file.
 
 ## Checking any date
 
