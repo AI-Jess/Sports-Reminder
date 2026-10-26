@@ -1,0 +1,63 @@
+name: Pregame reminder
+
+# Every 15 minutes during game hours: if the day's first game tips off soon,
+# post the lineup with game links to Discord (once per day).
+on:
+  schedule:
+    # 15:00–02:59 UTC = 10 AM–9:59 PM Central in summer/fall, 9 AM–8:59 PM in
+    # winter. Odd minutes avoid GitHub's busy top-of-the-hour queue.
+    - cron: "7,22,37,52 15-23,0-2 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Test date YYYYMMDD (blank = today)"
+        required: false
+        default: ""
+      now:
+        description: "Pretend time, Central, e.g. 2026-04-03T17:52 (blank = real time)"
+        required: false
+        default: ""
+      post:
+        description: "Post to Discord"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: messages-branch
+  cancel-in-progress: false
+
+jobs:
+  pregame:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: messages
+          path: out
+
+      - name: Check first tip-off
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          flags="--pregame"
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.post }}" = "true" ]; then
+            flags="$flags --post"
+          fi
+          [ -n "${{ inputs.now }}" ] && flags="$flags --now=${{ inputs.now }}"
+          out=$(python3 check_games.py ${{ inputs.date }} $flags 2>&1) || { echo "$out"; exit 1; }
+          echo "$out"
+          esc=$(printf '%s' "$out" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::notice title=Result::$esc"
+
+      - name: Remember it was sent
+        run: |
+          cd out
+          git add -A
+          git diff --cached --quiet && exit 0
+          git -c user.name="github-actions" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "Pregame sent"
+          git push -q

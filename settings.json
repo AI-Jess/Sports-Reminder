@@ -1,5 +1,6 @@
 {
   "title": "🏀 Women's hoops today",
+  "pregame_minutes_before": 10,
   "leagues": [
     {
       "label": "College",

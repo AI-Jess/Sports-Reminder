@@ -22,6 +22,11 @@ on:
 permissions:
   contents: write
 
+# Shares the messages branch with the pregame job; never run both at once.
+concurrency:
+  group: messages-branch
+  cancel-in-progress: false
+
 jobs:
   remind:
     runs-on: ubuntu-latest

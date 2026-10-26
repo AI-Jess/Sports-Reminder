@@ -7,7 +7,9 @@ settings.json.
 Usage:
     python check_games.py                          # today, preview only
     python check_games.py 20260328 20250921 --debug  # past dates, raw fields
-    python check_games.py --write --post           # what the daily job runs
+    python check_games.py --write --post           # 9 AM job: Discord + phone text
+    python check_games.py --pregame --post         # every 15 min: Discord before 1st game
+    python check_games.py 20260403 --pregame --now=2026-04-03T17:52  # test pregame
 """
 
 import json
@@ -103,33 +105,29 @@ def league_games(league: dict, data: dict, debug: bool) -> list:
     return sorted(games, key=lambda g: g["tip"])
 
 
-def render_game(g: dict, for_discord: bool) -> str:
-    if for_discord:
-        # Matchup becomes the link; <> stops Discord adding a big preview card.
-        matchup = f"[{g['matchup']}](<{g['link']}>)" if g["link"] else g["matchup"]
-        return f"• {g['prefix']}{matchup} — {g['time']} · {g['tv']}"
-    # Texts: link inline in parentheses, without https:// — a bare link on its
-    # own line gets dropped by Shortcuts, but this form comes through tappable.
-    link = f" ({g['link'].removeprefix('https://')})" if g["link"] else ""
-    return f"• {g['prefix']}{g['matchup']} — {g['time']} · {g['tv']}{link}"
+def render_game(g: dict, with_links: bool) -> str:
+    # Discord: the matchup is the link; <> stops Discord adding a big preview card.
+    matchup = f"[{g['matchup']}](<{g['link']}>)" if with_links and g["link"] else g["matchup"]
+    return f"• {g['prefix']}{matchup} — {g['time']} · {g['tv']}"
 
 
-def build_messages(date: str, debug: bool = False) -> tuple[str, str]:
-    """Returns (text version, Discord version). Same games; Discord gets masked links."""
+def find_games(date: str, debug: bool = False) -> list:
+    """[(league label, [games])] for leagues that have games that day."""
     found = [(lg["label"], league_games(lg, fetch(lg, date), debug)) for lg in SETTINGS["leagues"]]
-    found = [(label, games) for label, games in found if games]
-    if not found:
-        return "", ""
-
-    def render(for_discord: bool) -> str:
-        sections = [f"{label}\n" + "\n".join(render_game(g, for_discord) for g in games)
-                    for label, games in found]
-        return SETTINGS["title"] + "\n\n" + "\n\n".join(sections)
-
-    return render(False), render(True)
+    return [(label, games) for label, games in found if games]
 
 
-def post_to_discord(message: str, webhook: str) -> None:
+def render(found: list, with_links: bool, title: str) -> str:
+    sections = [f"{label}\n" + "\n".join(render_game(g, with_links) for g in games)
+                for label, games in found]
+    return title + "\n\n" + "\n\n".join(sections)
+
+
+def post_to_discord(message: str) -> None:
+    webhook = os.environ.get("DISCORD_WEBHOOK", "")
+    if not webhook:
+        print("DISCORD_WEBHOOK not set — skipped Discord")
+        return
     req = urllib.request.Request(
         webhook,
         data=json.dumps({"content": message}).encode(),
@@ -141,29 +139,60 @@ def post_to_discord(message: str, webhook: str) -> None:
         print(f"Posted to Discord (HTTP {r.status})")
 
 
+def morning(date: str, found: list, write: bool, post: bool) -> None:
+    """9 AM: lineup to Discord (with links) and saved for the phone text (no links)."""
+    text = render(found, False, SETTINGS["title"]) if found else ""
+    print(text or "(nothing today — stays silent)")
+    if write:
+        out = HERE / "out" / "days" / f"{date}.txt"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8")  # empty file = nothing today
+    if post and found:
+        post_to_discord(render(found, True, SETTINGS["title"]))
+
+
+def pregame(date: str, found: list, now: datetime, post: bool) -> None:
+    """Runs every ~15 min. Posts the linked lineup to Discord once a day,
+    shortly before the first game. A marker file stops repeat posts."""
+    marker = HERE / "out" / "days" / f"{date}.pregame"
+    if not found:
+        print("No games today")
+        return
+    if marker.exists():
+        print("Pregame reminder already sent today")
+        return
+    first = min(g["tip"] for _, games in found for g in games)
+    minutes = (first - now).total_seconds() / 60
+    lead = SETTINGS.get("pregame_minutes_before", 10)
+    # Checks run every 15 min and GitHub can start them late, so send as soon
+    # as a check lands within lead+15 min of tip (or up to 15 min after it).
+    if not (-15 <= minutes <= lead + 15):
+        print(f"First game in {minutes:.0f} min — not time yet")
+        return
+    when = "now" if minutes <= 1 else f"in {minutes:.0f} min"
+    msg = render(found, True, f"⏰ First game tips off {when}!")
+    print(msg)
+    if post:
+        post_to_discord(msg)
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text(now.isoformat(), encoding="utf-8")
+    print(f"Wrote {marker.name}")
+
+
 def main():
-    dates = [a for a in sys.argv[1:] if not a.startswith("--")] or [datetime.now(CENTRAL).strftime("%Y%m%d")]
-    debug = "--debug" in sys.argv
+    args = sys.argv[1:]
+    debug, write, post = "--debug" in args, "--write" in args, "--post" in args
+    # --now=2026-04-03T17:50 pretends it's that time (Central), for testing pregame.
+    now_arg = next((a.split("=", 1)[1] for a in args if a.startswith("--now=")), None)
+    now = datetime.fromisoformat(now_arg).replace(tzinfo=CENTRAL) if now_arg else datetime.now(CENTRAL)
+    dates = [a for a in args if not a.startswith("--")] or [now.strftime("%Y%m%d")]
     for date in dates:
         print(f"=== {date}")
-        msg, discord_msg = build_messages(date, debug)
-        print(msg or "(nothing today — stays silent)")
-        if msg:
-            print("\n[Discord version]\n" + discord_msg)
-
-        # --write: save where the phone Shortcut picks it up (empty file = nothing today).
-        if "--write" in sys.argv:
-            out = HERE / "out" / "days" / f"{date}.txt"
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_text(msg, encoding="utf-8")
-
-        # --post: send to Discord, only if there's something to say.
-        if "--post" in sys.argv and msg:
-            webhook = os.environ.get("DISCORD_WEBHOOK", "")
-            if webhook:
-                post_to_discord(discord_msg, webhook)
-            else:
-                print("DISCORD_WEBHOOK not set — skipped Discord")
+        found = find_games(date, debug)
+        if "--pregame" in args:
+            pregame(date, found, now, post)
+        else:
+            morning(date, found, write, post)
         print()
 
 
