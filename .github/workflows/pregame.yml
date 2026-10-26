@@ -40,6 +40,13 @@ jobs:
           ref: messages
           path: out
 
+      - name: Backup for a missed morning run
+        if: github.event_name == 'schedule'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        # Does nothing if the morning reminder already went out today.
+        run: python3 check_games.py --write --post --once
+
       - name: Check first tip-off
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}

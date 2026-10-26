@@ -140,11 +140,16 @@ def post_to_discord(message: str) -> None:
 
 
 def morning(date: str, found: list, write: bool, post: bool) -> None:
-    """9 AM: lineup to Discord (with links) and saved for the phone text (no links)."""
+    """Morning: lineup to Discord (with links) and saved for the phone text (no links)."""
+    out = HERE / "out" / "days" / f"{date}.txt"
+    # The morning job is scheduled several times as a backup (GitHub sometimes
+    # skips or delays scheduled runs). Only the first one that runs does anything.
+    if "--once" in sys.argv and out.exists():
+        print("Morning reminder already done today")
+        return
     text = render(found, False, SETTINGS["title"]) if found else ""
     print(text or "(nothing today — stays silent)")
     if write:
-        out = HERE / "out" / "days" / f"{date}.txt"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(text, encoding="utf-8")  # empty file = nothing today
     if post and found:
