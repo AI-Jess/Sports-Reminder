@@ -49,8 +49,27 @@ def short_name(team: dict, league: dict) -> str:
 def tv_channels(comp: dict) -> str:
     """Keep it short: the first two channels, minus the always-there League Pass."""
     names = [n for b in comp.get("broadcasts", []) for n in b.get("names", [])]
-    names = [n for n in names if n != "WNBA League Pass"]
-    return ", ".join(names[:2]) or "League Pass / TBD"
+    return [n for n in names if n != "WNBA League Pass"][:2]
+
+
+def watch_link(channel: str) -> str | None:
+    """Short link to the app that streams this channel (from settings.json)."""
+    for link, channels in SETTINGS.get("watch_links", {}).items():
+        if channel in channels:
+            return link
+    return None
+
+
+def render_tv(channels: list, for_discord: bool) -> str:
+    if not channels:
+        return "League Pass / TBD"
+    if for_discord:
+        # Masked links; <> stops Discord from adding a big preview card.
+        return ", ".join(f"[{c}](<https://{watch_link(c)}>)" if watch_link(c) else c for c in channels)
+    text = ", ".join(channels)
+    link = next((watch_link(c) for c in channels if watch_link(c)), None)
+    # Bare short link: iMessage turns it into a tappable link.
+    return f"{text} ({link})" if link else text
 
 
 def big_game_label(event: dict, comp: dict, rule: dict) -> str | None:
@@ -65,7 +84,7 @@ def big_game_label(event: dict, comp: dict, rule: dict) -> str | None:
     return None
 
 
-def league_lines(league: dict, data: dict, debug: bool) -> list:
+def league_games(league: dict, data: dict, debug: bool) -> list:
     mine = set(league["my_teams"])
     rule = league.get("also_include", {})
     games = []
@@ -86,19 +105,25 @@ def league_lines(league: dict, data: dict, debug: bool) -> list:
         tip = datetime.fromisoformat(event["date"].replace("Z", "+00:00")).astimezone(CENTRAL)
         matchup = " vs ".join(short_name(t, league) for t in teams)
         prefix = f"🏆 {label}: " if label else ""
-        games.append((tip, f"• {prefix}{matchup} — {tip.strftime('%-I:%M %p')} CT · {tv}"))
-    return [line for _, line in sorted(games)]
+        games.append((tip, f"• {prefix}{matchup} — {tip.strftime('%-I:%M %p')} CT · ", tv))
+    return sorted(games, key=lambda g: g[0])
 
 
-def build_message(date: str, debug: bool = False) -> str:
-    sections = []
-    for league in SETTINGS["leagues"]:
-        lines = league_lines(league, fetch(league, date), debug)
-        if lines:
-            sections.append(f"{league['label']}\n" + "\n".join(lines))
-    if not sections:
-        return ""
-    return SETTINGS["title"] + "\n\n" + "\n\n".join(sections)
+def build_messages(date: str, debug: bool = False) -> tuple[str, str]:
+    """Returns (text version, Discord version). Same content; Discord gets masked links."""
+    found = [(lg["label"], league_games(lg, fetch(lg, date), debug)) for lg in SETTINGS["leagues"]]
+    found = [(label, games) for label, games in found if games]
+    if not found:
+        return "", ""
+
+    def render(for_discord: bool) -> str:
+        sections = [
+            f"{label}\n" + "\n".join(line + render_tv(tv, for_discord) for _, line, tv in games)
+            for label, games in found
+        ]
+        return SETTINGS["title"] + "\n\n" + "\n\n".join(sections)
+
+    return render(False), render(True)
 
 
 def post_to_discord(message: str, webhook: str) -> None:
@@ -118,8 +143,10 @@ def main():
     debug = "--debug" in sys.argv
     for date in dates:
         print(f"=== {date}")
-        msg = build_message(date, debug)
+        msg, discord_msg = build_messages(date, debug)
         print(msg or "(nothing today — stays silent)")
+        if msg:
+            print("\n[Discord version]\n" + discord_msg)
 
         # --write: save where the phone Shortcut picks it up (empty file = nothing today).
         if "--write" in sys.argv:
@@ -131,7 +158,7 @@ def main():
         if "--post" in sys.argv and msg:
             webhook = os.environ.get("DISCORD_WEBHOOK", "")
             if webhook:
-                post_to_discord(msg, webhook)
+                post_to_discord(discord_msg, webhook)
             else:
                 print("DISCORD_WEBHOOK not set — skipped Discord")
         print()

@@ -20,5 +20,15 @@
         "all_playoff_games": true
       }
     }
-  ]
+  ],
+  "watch_links": {
+    "espn.com/watch": ["ESPN", "ESPN2", "ESPNU", "ESPNews", "ESPN+", "ESPN3", "ABC", "SEC Network", "SECN", "SECN+", "ACC Network", "ACCN", "ACCNX", "Longhorn Network"],
+    "foxsports.com/live": ["Fox", "FOX", "FS1", "FS2", "Big Ten Network", "BTN"],
+    "bigtenplus.com": ["B1G+"],
+    "paramountplus.com": ["CBS", "CBS Sports Network", "CBSSN", "Paramount+"],
+    "peacocktv.com": ["NBC", "Peacock", "USA Net", "USA Network"],
+    "amazon.com/primevideo": ["Prime Video", "Amazon Prime Video"],
+    "nba.com/watch": ["NBA TV"],
+    "hbomax.com": ["TNT", "truTV", "HBO Max", "Max"]
+  }
 }
