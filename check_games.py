@@ -1,111 +1,133 @@
-"""Daily women's college basketball reminder.
+"""Daily women's basketball reminder (college + WNBA).
 
-Checks ESPN, builds the message, posts it to Discord, and saves it for the
-iPhone Shortcut to text to the group chat.
+Checks ESPN, builds one message, posts it to Discord, and saves it for the
+iPhone Shortcut to text to the group chat. Teams and leagues live in
+settings.json.
 
 Usage:
-    python check_games.py                      # today, preview only
-    python check_games.py 20260328 --debug     # a past date, with raw fields
-    python check_games.py --write --post       # what the daily job runs
+    python check_games.py                          # today, preview only
+    python check_games.py 20260328 20250921 --debug  # past dates, raw fields
+    python check_games.py --write --post           # what the daily job runs
 """
 
 import json
 import os
 import sys
-from pathlib import Path
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
-# Edit this to change teams. Matched exactly against ESPN's short team name
-# ("location"), wrapped in pipes so "USC" doesn't match "USC Upstate".
-MY_TEAMS = "|UConn|USC|South Carolina|"
-
-# Any tournament game whose ESPN note contains one of these is included.
-BIG_ROUNDS = ["Sweet 16", "Elite 8", "Elite Eight", "Final Four", "National Championship"]
-TOURNEY_TAG = "Women's Basketball Championship"
-
-URL = (
-    "https://site.api.espn.com/apis/site/v2/sports/basketball/"
-    "womens-college-basketball/scoreboard?dates={date}&groups=50&limit=300"
-)
+HERE = Path(__file__).parent
+SETTINGS = json.loads((HERE / "settings.json").read_text(encoding="utf-8"))
 CENTRAL = ZoneInfo("America/Chicago")
+ESPN = "https://site.api.espn.com/apis/site/v2/sports/{path}/scoreboard?dates={date}"
 
 
-def fetch(date: str) -> dict:
-    req = urllib.request.Request(URL.format(date=date), headers={"User-Agent": "Mozilla/5.0"})
+def fetch(league: dict, date: str) -> dict:
+    url = ESPN.format(path=league["espn_path"], date=date)
+    if league.get("extra_params"):
+        url += "&" + league["extra_params"]
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.load(r)
 
 
-def build_message(data: dict, debug: bool = False) -> str:
-    games = []  # (tip-off time, line) so we can sort earliest first
+def team_names(team: dict) -> set:
+    """Every name ESPN uses for a team, so settings can say 'LSU' or 'Indiana Fever'."""
+    keys = ("location", "displayName", "shortDisplayName", "name", "abbreviation")
+    return {team.get(k, "") for k in keys} - {""}
+
+
+def short_name(team: dict, league: dict) -> str:
+    # College: "UConn". WNBA: "Fever" reads better than "Indiana".
+    if "wnba" in league["espn_path"]:
+        return team.get("name") or team.get("displayName", "")
+    return team.get("location") or team.get("displayName", "")
+
+
+def big_game_label(event: dict, comp: dict, rule: dict) -> str | None:
+    """Return a round label if this game qualifies for everyone, else None."""
+    headline = (comp.get("notes") or [{}])[0].get("headline", "")
+    if rule.get("all_playoff_games"):
+        if event.get("season", {}).get("type") == 3:  # ESPN: 3 = postseason
+            return headline or "Playoffs"
+        return None
+    if rule.get("note_contains") and rule["note_contains"] in headline:
+        return next((r for r in rule.get("rounds", []) if r in headline), None)
+    return None
+
+
+def league_lines(league: dict, data: dict, debug: bool) -> list:
+    mine = set(league["my_teams"])
+    rule = league.get("also_include", {})
+    games = []
     for event in data.get("events", []):
         comp = event["competitions"][0]
-        teams = [c["team"].get("location", "") for c in comp["competitors"]]
-        headline = (comp.get("notes") or [{}])[0].get("headline", "")
+        teams = [c["team"] for c in comp["competitors"]]
         tv = ", ".join(n for b in comp.get("broadcasts", []) for n in b.get("names", [])) or "TV TBD"
+        label = big_game_label(event, comp, rule)
+        is_mine = any(team_names(t) & mine for t in teams)
 
         if debug:
-            print(f"  {teams} | note={headline!r} | tv={tv!r} | date={event['date']}")
+            note = (comp.get("notes") or [{}])[0].get("headline", "")
+            print(f"  [{league['label']}] {[t.get('displayName') for t in teams]} | "
+                  f"note={note!r} | season_type={event.get('season', {}).get('type')} | tv={tv!r}")
 
-        is_my_team = any(f"|{t}|" in MY_TEAMS for t in teams)
-        round_name = next((r for r in BIG_ROUNDS if r in headline), None)
-        is_big_round = TOURNEY_TAG in headline and round_name is not None
-
-        if not (is_my_team or is_big_round):
+        if not (is_mine or label):
             continue
-
         tip = datetime.fromisoformat(event["date"].replace("Z", "+00:00")).astimezone(CENTRAL)
-        time_str = tip.strftime("%-I:%M %p CT")
-        # ESPN lists the away team first; show "Away vs Home".
-        matchup = " vs ".join(teams)
-        prefix = f"🏆 {round_name}: " if is_big_round else ""
-        games.append((tip, f"• {prefix}{matchup} — {time_str} · {tv}"))
+        matchup = " vs ".join(short_name(t, league) for t in teams)
+        prefix = f"🏆 {label}: " if label else ""
+        games.append((tip, f"• {prefix}{matchup} — {tip.strftime('%-I:%M %p')} CT · {tv}"))
+    return [line for _, line in sorted(games)]
 
-    if not games:
+
+def build_message(date: str, debug: bool = False) -> str:
+    sections = []
+    for league in SETTINGS["leagues"]:
+        lines = league_lines(league, fetch(league, date), debug)
+        if lines:
+            sections.append(f"{league['label']}\n" + "\n".join(lines))
+    if not sections:
         return ""
-    lines = [line for _, line in sorted(games)]
-    return "🏀 Women's hoops today\n\n" + "\n".join(lines)
+    return SETTINGS["title"] + "\n\n" + "\n\n".join(sections)
 
 
 def post_to_discord(message: str, webhook: str) -> None:
-    body = json.dumps({"content": message}).encode()
     req = urllib.request.Request(
         webhook,
-        data=body,
+        data=json.dumps({"content": message}).encode(),
         # Discord rejects requests without a real-looking User-Agent.
-        headers={"Content-Type": "application/json", "User-Agent": "SportsReminder (github.com/AI-Jess/Sports-Reminder, 1.0)"},
+        headers={"Content-Type": "application/json",
+                 "User-Agent": "SportsReminder (github.com/AI-Jess/Sports-Reminder, 1.0)"},
     )
     with urllib.request.urlopen(req, timeout=30) as r:
         print(f"Posted to Discord (HTTP {r.status})")
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    dates = [a for a in sys.argv[1:] if not a.startswith("--")] or [datetime.now(CENTRAL).strftime("%Y%m%d")]
     debug = "--debug" in sys.argv
-    date = args[0] if args else datetime.now(CENTRAL).strftime("%Y%m%d")
-    data = fetch(date)
-    print(f"Date {date}: {len(data.get('events', []))} games on ESPN")
-    msg = build_message(data, debug)
-    print("\n--- message ---")
-    print(msg or "(nothing today — Shortcut stays silent)")
+    for date in dates:
+        print(f"=== {date}")
+        msg = build_message(date, debug)
+        print(msg or "(nothing today — stays silent)")
 
-    # --write: save the message where the phone Shortcut picks it up.
-    # The file is written even when empty, so the Shortcut knows the job ran.
-    if "--write" in sys.argv:
-        out = Path("out/days") / f"{date}.txt"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(msg, encoding="utf-8")
-        print(f"Wrote {out}")
+        # --write: save where the phone Shortcut picks it up (empty file = nothing today).
+        if "--write" in sys.argv:
+            out = HERE / "out" / "days" / f"{date}.txt"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(msg, encoding="utf-8")
 
-    # --post: send to Discord (only if there's something to say).
-    if "--post" in sys.argv and msg:
-        webhook = os.environ.get("DISCORD_WEBHOOK", "")
-        if webhook:
-            post_to_discord(msg, webhook)
-        else:
-            print("DISCORD_WEBHOOK not set — skipped Discord")
+        # --post: send to Discord, only if there's something to say.
+        if "--post" in sys.argv and msg:
+            webhook = os.environ.get("DISCORD_WEBHOOK", "")
+            if webhook:
+                post_to_discord(msg, webhook)
+            else:
+                print("DISCORD_WEBHOOK not set — skipped Discord")
+        print()
 
 
 if __name__ == "__main__":

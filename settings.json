@@ -1,0 +1,24 @@
+{
+  "title": "🏀 Women's hoops today",
+  "leagues": [
+    {
+      "label": "College",
+      "espn_path": "basketball/womens-college-basketball",
+      "extra_params": "groups=50&limit=300",
+      "my_teams": ["UConn", "USC", "South Carolina", "LSU"],
+      "also_include": {
+        "note_contains": "Women's Basketball Championship",
+        "rounds": ["Sweet 16", "Elite 8", "Elite Eight", "Final Four", "National Championship"]
+      }
+    },
+    {
+      "label": "WNBA",
+      "espn_path": "basketball/wnba",
+      "extra_params": "",
+      "my_teams": ["Indiana Fever", "Dallas Wings", "Minnesota Lynx"],
+      "also_include": {
+        "all_playoff_games": true
+      }
+    }
+  ]
+}

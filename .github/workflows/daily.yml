@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: "Test date YYYYMMDD (blank = today)"
+        description: "Test date(s) YYYYMMDD, space-separated (blank = today)"
         required: false
         default: ""
       post:
@@ -36,10 +36,12 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           flags="--write"
-          # Scheduled runs always post; manual runs post only if ticked.
+          # Scheduled runs always post; manual runs post only if ticked,
+          # and show every game ESPN listed so you can see what was skipped.
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.post }}" = "true" ]; then
             flags="$flags --post"
           fi
+          [ "${{ github.event_name }}" = "workflow_dispatch" ] && flags="$flags --debug"
           out=$(python check_games.py ${{ inputs.date }} $flags 2>&1) || { echo "$out"; exit 1; }
           echo "$out"
           esc=$(printf '%s' "$out" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
