@@ -1,0 +1,26 @@
+name: Preview reminder
+
+# Run from the Actions tab: pick a date to see what the Shortcut would send.
+on:
+  workflow_dispatch:
+    inputs:
+      dates:
+        description: "Dates to check, space-separated YYYYMMDD (blank = today)"
+        required: false
+        default: ""
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Preview
+        run: |
+          if [ -z "${{ inputs.dates }}" ]; then
+            python check_games.py --debug
+          else
+            for d in ${{ inputs.dates }}; do python check_games.py "$d" --debug; echo; done
+          fi
