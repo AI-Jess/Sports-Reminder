@@ -98,7 +98,8 @@ def league_games(league: dict, data: dict, debug: bool) -> list:
         if debug:
             note = (comp.get("notes") or [{}])[0].get("headline", "")
             print(f"  [{league['label']}] {[t.get('displayName') for t in teams]} | "
-                  f"note={note!r} | season_type={event.get('season', {}).get('type')} | tv={tv!r}")
+                  f"note={note!r} | season_type={event.get('season', {}).get('type')} | tv={tv!r} | "
+                  f"links={[l.get('href') for l in event.get('links', [])][:2]}")
 
         if not (is_mine or label):
             continue
