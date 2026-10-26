@@ -1,0 +1,54 @@
+name: Daily reminder
+
+# Runs every morning, posts to Discord, and saves the message to the
+# `messages` branch for the iPhone Shortcut to pick up and text.
+on:
+  schedule:
+    # 12:30 UTC = 7:30 AM Central in summer/fall, 6:30 AM in winter.
+    # GitHub can start scheduled jobs late, so this leaves room before the
+    # phone's 9 AM Shortcut.
+    - cron: "30 12 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Test date YYYYMMDD (blank = today)"
+        required: false
+        default: ""
+      post:
+        description: "Post to Discord"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check games
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          flags="--write"
+          # Scheduled runs always post; manual runs post only if ticked.
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.post }}" = "true" ]; then
+            flags="$flags --post"
+          fi
+          out=$(python check_games.py ${{ inputs.date }} $flags 2>&1) || { echo "$out"; exit 1; }
+          echo "$out"
+          esc=$(printf '%s' "$out" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::notice title=Result::$esc"
+
+      - name: Publish for the Shortcut
+        run: |
+          cd out
+          git init -q -b messages
+          git add -A
+          git -c user.name="github-actions" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "Messages $(date -u +%F)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" messages
