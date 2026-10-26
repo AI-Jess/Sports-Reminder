@@ -19,8 +19,12 @@ jobs:
           python-version: "3.12"
       - name: Preview
         run: |
-          if [ -z "${{ inputs.dates }}" ]; then
-            python check_games.py --debug
-          else
-            for d in ${{ inputs.dates }}; do python check_games.py "$d" --debug; echo; done
-          fi
+          dates="${{ inputs.dates }}"
+          [ -z "$dates" ] && dates=$(TZ=America/Chicago date +%Y%m%d)
+          for d in $dates; do
+            out=$(python check_games.py "$d" --debug 2>&1)
+            echo "$out"
+            # Also surface each result as an annotation so it shows on the run page.
+            esc=$(printf '%s' "$out" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::notice title=Preview $d::$esc"
+          done
