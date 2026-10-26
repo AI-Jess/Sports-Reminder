@@ -152,6 +152,9 @@ def morning(date: str, found: list, write: bool, post: bool) -> None:
     if write:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(text, encoding="utf-8")  # empty file = nothing today
+        # Same message as JSON: the Shortcut reads the "text" value, which iOS
+        # treats as plain text (a downloaded .txt can get sent as a file).
+        out.with_suffix(".json").write_text(json.dumps({"text": text}, ensure_ascii=False), encoding="utf-8")
     if post and found:
         post_to_discord(render(found, True, SETTINGS["title"]))
 
