@@ -18,8 +18,9 @@ Every morning, a free GitHub job checks ESPN for women's college basketball and 
 No matches → nothing is sent anywhere.
 
 **How it flows**
-1. ~7:30 AM CT — GitHub job checks ESPN, posts to Discord, saves the message.
+1. ~7:30 AM CT — GitHub job checks ESPN, posts the lineup to Discord (matchups link to ESPN game pages), and saves a link-free version for the phone.
 2. 9:00 AM — your iPhone Shortcut grabs that message and texts the group.
+3. ~10 min before the first game — Discord gets "⏰ First game tips off in 10 min!" with the lineup and game links. (Checked every 15 min during game hours; sent once a day. Change the lead time with `pregame_minutes_before` in `settings.json`.)
 
 ---
 
