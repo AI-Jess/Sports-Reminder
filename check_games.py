@@ -46,30 +46,18 @@ def short_name(team: dict, league: dict) -> str:
     return team.get("location") or team.get("displayName", "")
 
 
-def tv_channels(comp: dict) -> str:
+def tv_channels(comp: dict) -> list:
     """Keep it short: the first two channels, minus the always-there League Pass."""
     names = [n for b in comp.get("broadcasts", []) for n in b.get("names", [])]
     return [n for n in names if n != "WNBA League Pass"][:2]
 
 
-def watch_link(channel: str) -> str | None:
-    """Short link to the app that streams this channel (from settings.json)."""
-    for link, channels in SETTINGS.get("watch_links", {}).items():
-        if channel in channels:
-            return link
+def game_link(event: dict) -> str | None:
+    """ESPN's page for this game. Tapping it opens the ESPN app (score, where to watch)."""
+    for link in event.get("links", []):
+        if "/game/" in link.get("href", ""):
+            return link["href"]
     return None
-
-
-def render_tv(channels: list, for_discord: bool) -> str:
-    if not channels:
-        return "League Pass / TBD"
-    if for_discord:
-        # Masked links; <> stops Discord from adding a big preview card.
-        return ", ".join(f"[{c}](<https://{watch_link(c)}>)" if watch_link(c) else c for c in channels)
-    text = ", ".join(channels)
-    link = next((watch_link(c) for c in channels if watch_link(c)), None)
-    # Bare short link: iMessage turns it into a tappable link.
-    return f"{text} ({link})" if link else text
 
 
 def big_game_label(event: dict, comp: dict, rule: dict) -> str | None:
@@ -104,24 +92,38 @@ def league_games(league: dict, data: dict, debug: bool) -> list:
         if not (is_mine or label):
             continue
         tip = datetime.fromisoformat(event["date"].replace("Z", "+00:00")).astimezone(CENTRAL)
-        matchup = " vs ".join(short_name(t, league) for t in teams)
-        prefix = f"🏆 {label}: " if label else ""
-        games.append((tip, f"• {prefix}{matchup} — {tip.strftime('%-I:%M %p')} CT · ", tv))
-    return sorted(games, key=lambda g: g[0])
+        games.append({
+            "tip": tip,
+            "prefix": f"🏆 {label}: " if label else "",
+            "matchup": " vs ".join(short_name(t, league) for t in teams),
+            "time": tip.strftime("%-I:%M %p") + " CT",
+            "tv": ", ".join(tv) or "League Pass / TBD",
+            "link": game_link(event),
+        })
+    return sorted(games, key=lambda g: g["tip"])
+
+
+def render_game(g: dict, for_discord: bool) -> str:
+    if for_discord:
+        # Matchup becomes the link; <> stops Discord adding a big preview card.
+        matchup = f"[{g['matchup']}](<{g['link']}>)" if g["link"] else g["matchup"]
+        return f"• {g['prefix']}{matchup} — {g['time']} · {g['tv']}"
+    # Texts: link inline in parentheses, without https:// — a bare link on its
+    # own line gets dropped by Shortcuts, but this form comes through tappable.
+    link = f" ({g['link'].removeprefix('https://')})" if g["link"] else ""
+    return f"• {g['prefix']}{g['matchup']} — {g['time']} · {g['tv']}{link}"
 
 
 def build_messages(date: str, debug: bool = False) -> tuple[str, str]:
-    """Returns (text version, Discord version). Same content; Discord gets masked links."""
+    """Returns (text version, Discord version). Same games; Discord gets masked links."""
     found = [(lg["label"], league_games(lg, fetch(lg, date), debug)) for lg in SETTINGS["leagues"]]
     found = [(label, games) for label, games in found if games]
     if not found:
         return "", ""
 
     def render(for_discord: bool) -> str:
-        sections = [
-            f"{label}\n" + "\n".join(line + render_tv(tv, for_discord) for _, line, tv in games)
-            for label, games in found
-        ]
+        sections = [f"{label}\n" + "\n".join(render_game(g, for_discord) for g in games)
+                    for label, games in found]
         return SETTINGS["title"] + "\n\n" + "\n\n".join(sections)
 
     return render(False), render(True)

@@ -5,30 +5,35 @@
       "label": "College",
       "espn_path": "basketball/womens-college-basketball",
       "extra_params": "groups=50&limit=300",
-      "my_teams": ["UConn", "USC", "South Carolina", "LSU"],
+      "my_teams": [
+        "UConn",
+        "USC",
+        "South Carolina",
+        "LSU"
+      ],
       "also_include": {
         "note_contains": "Women's Basketball Championship",
-        "rounds": ["Sweet 16", "Elite 8", "Elite Eight", "Final Four", "National Championship"]
+        "rounds": [
+          "Sweet 16",
+          "Elite 8",
+          "Elite Eight",
+          "Final Four",
+          "National Championship"
+        ]
       }
     },
     {
       "label": "WNBA",
       "espn_path": "basketball/wnba",
       "extra_params": "",
-      "my_teams": ["Indiana Fever", "Dallas Wings", "Minnesota Lynx"],
+      "my_teams": [
+        "Indiana Fever",
+        "Dallas Wings",
+        "Minnesota Lynx"
+      ],
       "also_include": {
         "all_playoff_games": true
       }
     }
-  ],
-  "watch_links": {
-    "www.espn.com/watch": ["ESPN", "ESPN2", "ESPNU", "ESPNews", "ESPN+", "ESPN3", "ABC", "SEC Network", "SECN", "SECN+", "ACC Network", "ACCN", "ACCNX", "Longhorn Network"],
-    "www.foxsports.com/live": ["Fox", "FOX", "FS1", "FS2", "Big Ten Network", "BTN"],
-    "www.bigtenplus.com": ["B1G+"],
-    "www.paramountplus.com": ["CBS", "CBS Sports Network", "CBSSN", "Paramount+"],
-    "www.peacocktv.com": ["NBC", "Peacock", "USA Net", "USA Network"],
-    "www.amazon.com/primevideo": ["Prime Video", "Amazon Prime Video"],
-    "www.nba.com/watch": ["NBA TV"],
-    "www.hbomax.com": ["TNT", "truTV", "HBO Max", "Max"]
-  }
+  ]
 }
