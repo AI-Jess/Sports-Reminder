@@ -3,7 +3,7 @@
 Every morning, a free GitHub job checks ESPN for women's college basketball and WNBA games. If any match, it posts one message to Discord, and a tiny iPhone Shortcut texts the same message to the group chat.
 
 **What counts as a match** (set in `settings.json`)
-- College: any **UConn, USC, South Carolina or LSU** game, plus every NCAA tournament game from the **Sweet 16 on** (the Women's NIT is skipped).
+- College: any **UConn, USC, South Carolina, LSU or Notre Dame** game, plus every NCAA tournament game from the **Sweet 16 on** (the Women's NIT is skipped).
 - WNBA: any **Fever, Wings or Lynx** game, plus **every playoff game**.
 
 **What the message looks like** (real output for April 3, 2026):
