@@ -10,8 +10,14 @@ on:
     # one hour earlier in winter — all before the phone's 8 AM Shortcut.
     # (The pregame job, every 15 min from ~10 AM, is a further backup.)
     - cron: "13 10,11,12 * * *"
+  # cron-job.org calls this at 6:30 AM CT with inputs {"scheduled": "true"},
+  # since GitHub's own schedule (above, kept as a backup) often runs hours late.
   workflow_dispatch:
     inputs:
+      scheduled:
+        description: "Act like the automatic run (cron-job.org sets this)"
+        type: boolean
+        default: false
       date:
         description: "Test date(s) YYYYMMDD, space-separated (blank = today)"
         required: false
@@ -45,7 +51,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           flags="--write"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.scheduled }}" = "true" ]; then
             flags="$flags --post --once"
           else
             # Manual runs: post only if ticked; show every game ESPN listed.

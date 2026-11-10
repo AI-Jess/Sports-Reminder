@@ -2,13 +2,17 @@ name: Pregame reminder
 
 # Every 15 minutes during game hours: if the day's first game tips off soon,
 # post the lineup with game links to Discord (once per day).
+#
+# Triggered by cron-job.org (GitHub's own scheduler ran hours late), which
+# calls the API with inputs {"scheduled": "true"}. No GitHub schedule here, to
+# save Actions minutes.
 on:
-  schedule:
-    # 15:00–02:59 UTC = 10 AM–9:59 PM Central in summer/fall, 9 AM–8:59 PM in
-    # winter. Odd minutes avoid GitHub's busy top-of-the-hour queue.
-    - cron: "7,22,37,52 15-23,0-2 * * *"
   workflow_dispatch:
     inputs:
+      scheduled:
+        description: "Act like the automatic run (cron-job.org sets this)"
+        type: boolean
+        default: false
       date:
         description: "Test date YYYYMMDD (blank = today)"
         required: false
@@ -41,7 +45,7 @@ jobs:
           path: out
 
       - name: Backup for a missed morning run
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || inputs.scheduled
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         # Does nothing if the morning reminder already went out today.
@@ -52,7 +56,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           flags="--pregame"
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.post }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.scheduled }}" = "true" ] || [ "${{ inputs.post }}" = "true" ]; then
             flags="$flags --post"
           fi
           [ -n "${{ inputs.now }}" ] && flags="$flags --now=${{ inputs.now }}"
