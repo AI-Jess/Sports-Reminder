@@ -68,9 +68,23 @@ The 🏀 check means it only texts when there's a real message — no games, a m
 
 ## Part 5 — Run it every morning
 
-Shortcuts → **Automation** → **+** → **Time of Day** → 9:00 AM, **Daily** → **Run Immediately**, **Notify When Run** off → pick **Hoops Reminder**.
+Shortcuts → **Automation** → **+** → **Time of Day** → 8:00 AM, **Daily** → **Run Immediately**, **Notify When Run** off → pick **Hoops Reminder**.
 
-The GitHub side already runs daily on its own.
+## Part 6 — On-time triggers (cron-job.org)
+
+GitHub's free scheduler often runs hours late, so cron-job.org (free) starts the jobs on time instead. GitHub's own morning schedule stays as a backup; nothing ever posts twice.
+
+1. **Key:** github.com/settings/personal-access-tokens/new → name `cron-job trigger` → Only select repositories → **Sports-Reminder** → Repository permissions → **Actions: Read and write** → Generate, copy.
+2. **cron-job.org** → sign up → **Create cronjob**, twice:
+
+| | Morning | Pregame |
+|---|---|---|
+| URL | `https://api.github.com/repos/AI-Jess/Sports-Reminder/actions/workflows/daily.yml/dispatches` | same, ending `pregame.yml/dispatches` |
+| Schedule | Every day at 6:30 | Custom: minutes `0,15,30,45`, hours `10–21` |
+
+Both, under **Advanced**: Time zone `America/Chicago` · Request method `POST` · Headers `Authorization: Bearer <key>`, `Accept: application/vnd.github+json`, `Content-Type: application/json` · Request body `{"ref":"main","inputs":{"scheduled":"true"}}`
+
+A successful call returns HTTP **204**.
 
 ---
 
