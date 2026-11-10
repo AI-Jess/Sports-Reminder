@@ -13,6 +13,7 @@
         "LSU",
         "Notre Dame"
       ],
+      "show_rankings": true,
       "also_include": {
         "note_contains": "Women's Basketball Championship",
         "rounds": [

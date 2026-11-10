@@ -48,6 +48,14 @@ def short_name(team: dict, league: dict) -> str:
     return team.get("location") or team.get("displayName", "")
 
 
+def ranked(name: str, competitor: dict, league: dict) -> str:
+    """Put the AP Top 25 rank in front, e.g. '#3 UConn'. ESPN uses 99 for unranked."""
+    if not league.get("show_rankings"):
+        return name
+    rank = (competitor.get("curatedRank") or {}).get("current")
+    return f"#{rank} {name}" if isinstance(rank, int) and 1 <= rank <= 25 else name
+
+
 def tv_channels(comp: dict) -> list:
     """Keep it short: the first two channels, minus the always-there League Pass."""
     names = [n for b in comp.get("broadcasts", []) for n in b.get("names", [])]
@@ -97,7 +105,8 @@ def league_games(league: dict, data: dict, debug: bool) -> list:
         games.append({
             "tip": tip,
             "prefix": f"🏆 {label}: " if label else "",
-            "matchup": " vs ".join(short_name(t, league) for t in teams),
+            "matchup": " vs ".join(
+                ranked(short_name(c["team"], league), c, league) for c in comp["competitors"]),
             "time": tip.strftime("%-I:%M %p") + " CT",
             "tv": ", ".join(tv) or "League Pass / TBD",
             "link": game_link(event),
