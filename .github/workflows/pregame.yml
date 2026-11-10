@@ -58,7 +58,8 @@ jobs:
           [ -n "${{ inputs.now }}" ] && flags="$flags --now=${{ inputs.now }}"
           out=$(python3 check_games.py ${{ inputs.date }} $flags 2>&1) || { echo "$out"; exit 1; }
           echo "$out"
-          esc=$(printf '%s' "$out" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          # Summary note skips the per-game debug lines (notes are capped at 4,096 chars).
+          esc=$(printf '%s' "$out" | grep -v '^  \[' | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
           echo "::notice title=Result::$esc"
 
       - name: Remember it was sent
