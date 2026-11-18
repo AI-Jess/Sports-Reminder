@@ -37,6 +37,13 @@
       "also_include": {
         "all_playoff_games": true
       }
+    },
+    {
+      "label": "Woodbury Royals (HS)",
+      "source": "maxpreps",
+      "team_name": "Woodbury",
+      "maxpreps_schedule": "https://www.maxpreps.com/mn/woodbury/woodbury-royals/basketball/girls/schedule/",
+      "school_id": "113df54c-c3b6-4c31-855a-1889fbca563b"
     }
   ]
 }

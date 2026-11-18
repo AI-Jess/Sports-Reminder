@@ -1,6 +1,6 @@
-"""Daily women's basketball reminder (college + WNBA).
+"""Daily women's basketball reminder (college, WNBA, Woodbury HS).
 
-Checks ESPN, builds one message, posts it to Discord, and saves it for the
+Checks ESPN (and MaxPreps for high school), builds one message, posts it to Discord, and saves it for the
 iPhone Shortcut to text to the group chat. Teams and leagues live in
 settings.json.
 
@@ -14,6 +14,7 @@ Usage:
 
 import json
 import os
+import re
 import sys
 import urllib.request
 from datetime import datetime
@@ -120,10 +121,87 @@ def render_game(g: dict, with_links: bool) -> str:
     return f"• {g['prefix']}{matchup} — {g['time']} · {g['tv']}"
 
 
+MAXPREPS_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+               "(KHTML, like Gecko) Version/17.0 Safari/605.1.15")
+
+
+def maxpreps_season(team: dict) -> list:
+    """A high school team's whole season from its MaxPreps schedule page.
+
+    Fetched at most once a day: the result is cached on the messages branch,
+    so the every-15-minute pregame checks reuse it instead of hitting MaxPreps.
+    """
+    today = datetime.now(CENTRAL).strftime("%Y%m%d")
+    cache = HERE / "out" / "cache" / f"maxpreps-{team['school_id'][:8]}-{today}.json"
+    if cache.exists():
+        return json.loads(cache.read_text(encoding="utf-8"))
+
+    req = urllib.request.Request(team["maxpreps_schedule"], headers={"User-Agent": MAXPREPS_UA})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        html = r.read().decode("utf-8", "replace")
+    m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.S)
+    contests = json.loads(m.group(1))["props"]["pageProps"]["contests"]
+
+    games = []
+    for c in contests:
+        # MaxPreps stores each game as a positional list; pick fields by shape
+        # rather than position where possible so small layout changes don't break it.
+        start = next(x for x in c[3:] if isinstance(x, str) and re.match(r"\d{4}-\d\d-\d\dT\d\d:\d\d", x))
+        link = next((x for x in c if isinstance(x, str) and "/game/" in x), None)
+        us = next(t for t in c[0] if t[1] == team["school_id"])
+        them = next(t for t in c[0] if t[1] != team["school_id"])
+        games.append({
+            "start": start,                      # local (Central) time
+            "opponent": them[14],
+            "home": us[11] == 0,                 # 0 = home, 1 = away
+            "link": link.split("?")[0] if link else None,
+        })
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    for old in cache.parent.glob(f"maxpreps-{team['school_id'][:8]}-*.json"):
+        old.unlink()  # keep only today's copy
+    cache.write_text(json.dumps(games), encoding="utf-8")
+    return games
+
+
+def maxpreps_games(team: dict, date: str, debug: bool) -> list:
+    day = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    games = []
+    for g in maxpreps_season(team):
+        if not g["start"].startswith(day):
+            continue
+        tip = datetime.fromisoformat(g["start"]).replace(tzinfo=CENTRAL)
+        if debug:
+            print(f"  [{team['label']}] {g}")
+        games.append({
+            "tip": tip,
+            "prefix": "",
+            "matchup": f"{team['team_name']} vs {g['opponent']}",
+            "time": tip.strftime("%-I:%M %p") + " CT",
+            "tv": "🏠 Home" if g["home"] else f"Away @ {g['opponent']}",
+            "link": g["link"],
+        })
+    return sorted(games, key=lambda g: g["tip"])
+
+
 def find_games(date: str, debug: bool = False) -> list:
-    """[(league label, [games])] for leagues that have games that day."""
-    found = [(lg["label"], league_games(lg, fetch(lg, date), debug)) for lg in SETTINGS["leagues"]]
-    return [(label, games) for label, games in found if games]
+    """[(league label, [games])] for leagues that have games that day.
+
+    One source failing (site down, page layout changed) skips just that
+    league, so the rest of the message still goes out.
+    """
+    found = []
+    for lg in SETTINGS["leagues"]:
+        try:
+            if lg.get("source") == "maxpreps":
+                games = maxpreps_games(lg, date, debug)
+            else:
+                games = league_games(lg, fetch(lg, date), debug)
+        except Exception as e:  # noqa: BLE001 — never let one source sink the reminder
+            print(f"WARNING: couldn't check {lg['label']}: {type(e).__name__}: {e}")
+            continue
+        if games:
+            found.append((lg["label"], games))
+    return found
 
 
 def render(found: list, with_links: bool, title: str) -> str:
