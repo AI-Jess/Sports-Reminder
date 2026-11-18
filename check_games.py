@@ -164,14 +164,22 @@ def maxpreps_season(team: dict) -> list:
 
 
 def maxpreps_games(team: dict, date: str, debug: bool) -> list:
+    """Woodbury's games that day: live from MaxPreps, plus any game on a day
+    MaxPreps doesn't list yet, from the schedule saved in settings.json."""
     day = f"{date[:4]}-{date[4:6]}-{date[6:]}"
     games = []
-    for g in maxpreps_season(team):
+    try:
+        season = maxpreps_season(team)
+    except Exception as e:  # noqa: BLE001 — fall back to the saved schedule
+        print(f"WARNING: MaxPreps unavailable for {team['label']} ({type(e).__name__}: {e}); "
+              "using the saved schedule")
+        season = []
+    for g in season:
         if not g["start"].startswith(day):
             continue
         tip = datetime.fromisoformat(g["start"]).replace(tzinfo=CENTRAL)
         if debug:
-            print(f"  [{team['label']}] {g}")
+            print(f"  [{team['label']}] MaxPreps {g}")
         games.append({
             "tip": tip,
             "prefix": "",
@@ -180,6 +188,26 @@ def maxpreps_games(team: dict, date: str, debug: bool) -> list:
             "tv": "🏠 Home" if g["home"] else f"Away @ {g['opponent']}",
             "link": g["link"],
         })
+
+    snap = team.get("schedule_snapshot") or {}
+    if not games:  # MaxPreps has nothing that day → use the saved schedule
+        for g in snap.get("games", []):
+            if g["date"] != day:
+                continue
+            tip = datetime.fromisoformat(f"{g['date']}T{g['time']}").replace(tzinfo=CENTRAL)
+            if debug:
+                print(f"  [{team['label']}] saved {g}")
+            site = {"home": "🏠 Home", "away": f"Away @ {g['opponent']}"}.get(g["site"], "Neutral site")
+            note = g.get("note", "")
+            is_section = note.startswith("Section")
+            games.append({
+                "tip": tip,
+                "prefix": f"🏆 {note}: " if is_section else "",
+                "matchup": f"{team['team_name']} vs {g['opponent']}",
+                "time": tip.strftime("%-I:%M %p") + " CT",
+                "tv": site if is_section or not note else f"{site} · {note}",
+                "link": snap.get("source"),
+            })
     return sorted(games, key=lambda g: g["tip"])
 
 

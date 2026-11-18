@@ -43,7 +43,217 @@
       "source": "maxpreps",
       "team_name": "Woodbury",
       "maxpreps_schedule": "https://www.maxpreps.com/mn/woodbury/woodbury-royals/basketball/girls/schedule/",
-      "school_id": "113df54c-c3b6-4c31-855a-1889fbca563b"
+      "school_id": "113df54c-c3b6-4c31-855a-1889fbca563b",
+      "schedule_snapshot": {
+        "source": "https://www.gobound.com/mn/mshsl/girlsbasketball/2026-27/woodbury/v/schedule",
+        "saved": "2026-11-17",
+        "note": "Copied from Bound (official), which blocks automated checks. Used for any day MaxPreps doesn't list. Update if the schedule changes.",
+        "games": [
+          {
+            "date": "2026-11-25",
+            "time": "19:00",
+            "opponent": "Farmington",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2026-12-01",
+            "time": "19:00",
+            "opponent": "Centennial",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2026-12-05",
+            "time": "15:00",
+            "opponent": "Prior Lake",
+            "site": "neutral",
+            "note": "Breakdown Tip-off Tournament @ Bloomington Kennedy"
+          },
+          {
+            "date": "2026-12-08",
+            "time": "19:00",
+            "opponent": "Roseville",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2026-12-11",
+            "time": "19:00",
+            "opponent": "Park",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2026-12-15",
+            "time": "19:00",
+            "opponent": "Cretin-Derham Hall",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2026-12-18",
+            "time": "19:00",
+            "opponent": "White Bear Lake",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2026-12-19",
+            "time": "10:00",
+            "opponent": "Eastview",
+            "site": "neutral",
+            "note": "Breakdown Big Stage Tournament @ Bloomington Kennedy"
+          },
+          {
+            "date": "2026-12-29",
+            "time": "15:15",
+            "opponent": "Andover",
+            "site": "neutral",
+            "note": "Capital City Classic @ Northwestern University"
+          },
+          {
+            "date": "2026-12-30",
+            "time": "10:30",
+            "opponent": "Totino-Grace",
+            "site": "neutral",
+            "note": "Capital City Classic @ Northwestern University"
+          },
+          {
+            "date": "2027-01-05",
+            "time": "19:00",
+            "opponent": "New Prague",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-01-08",
+            "time": "19:00",
+            "opponent": "Irondale",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-01-12",
+            "time": "17:30",
+            "opponent": "East Ridge",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-01-15",
+            "time": "19:00",
+            "opponent": "Forest Lake",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-01-20",
+            "time": "19:00",
+            "opponent": "Mounds View",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-01-22",
+            "time": "19:00",
+            "opponent": "Stillwater",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-01-26",
+            "time": "19:00",
+            "opponent": "Roseville",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-01-29",
+            "time": "19:00",
+            "opponent": "Park",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-02-02",
+            "time": "19:00",
+            "opponent": "Cretin-Derham Hall",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-02-04",
+            "time": "19:00",
+            "opponent": "White Bear Lake",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-02-08",
+            "time": "19:00",
+            "opponent": "Buffalo",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-02-12",
+            "time": "19:00",
+            "opponent": "Irondale",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-02-17",
+            "time": "17:30",
+            "opponent": "East Ridge",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-02-19",
+            "time": "19:00",
+            "opponent": "Forest Lake",
+            "site": "away",
+            "note": ""
+          },
+          {
+            "date": "2027-02-23",
+            "time": "19:00",
+            "opponent": "Mounds View",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-02-26",
+            "time": "19:00",
+            "opponent": "Stillwater",
+            "site": "home",
+            "note": ""
+          },
+          {
+            "date": "2027-03-03",
+            "time": "19:00",
+            "opponent": "TBD",
+            "site": "home",
+            "note": "Section Quarterfinal"
+          },
+          {
+            "date": "2027-03-06",
+            "time": "19:00",
+            "opponent": "TBD",
+            "site": "home",
+            "note": "Section Semifinal"
+          },
+          {
+            "date": "2027-03-11",
+            "time": "19:00",
+            "opponent": "TBD",
+            "site": "home",
+            "note": "Section Final"
+          }
+        ]
+      }
     }
   ]
 }
