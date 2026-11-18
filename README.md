@@ -70,7 +70,7 @@ Set in [`settings.json`](settings.json):
 |---|---|---|
 | College | UConn, USC, South Carolina, LSU, Notre Dame | Every NCAA tournament game from the **Sweet 16** on |
 | WNBA | Fever, Wings, Lynx | **Every playoff game** |
-| Woodbury Royals (HS) | Every girls' varsity game, from MaxPreps | — |
+| Woodbury Royals (HS) | Every girls' varsity game: live from MaxPreps, plus a saved copy of the official Bound schedule for days MaxPreps is missing | Section playoffs |
 
 College teams show their AP Top 25 ranking (seed during the tournament).
 
@@ -103,6 +103,7 @@ Edit [`settings.json`](settings.json) on GitHub (pencil icon) or ask Claude. Not
 | Change pregame lead time | `pregame_minutes_before` |
 | Turn rankings off | `"show_rankings": false` |
 | Add a league (e.g. NBA) | one more block in `leagues` |
+| Woodbury game moved or added | the game in `schedule_snapshot` (or just tell Claude) |
 | Follow another high school team | copy the Woodbury block; set its MaxPreps schedule URL and `school_id` |
 
 **Check any date:** Actions → **Daily reminder** → **Run workflow** → enter a date, untick **Post to Discord**. The result shows on the run page.
