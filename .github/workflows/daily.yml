@@ -50,13 +50,15 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          flags="--write"
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.scheduled }}" = "true" ]; then
-            flags="$flags --post --once"
+            flags="--write --post --once"
           else
             # Manual runs: post only if ticked; show every game ESPN listed.
+            # A test date is never saved — a saved file for a future day
+            # would make that day's real morning run think it already went out.
+            flags="--debug"
             [ "${{ inputs.post }}" = "true" ] && flags="$flags --post"
-            flags="$flags --debug"
+            [ -z "${{ inputs.date }}" ] && flags="$flags --write"
           fi
           out=$(python3 check_games.py ${{ inputs.date }} $flags 2>&1) || { echo "$out"; exit 1; }
           echo "$out"

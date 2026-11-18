@@ -267,8 +267,9 @@ def pregame(date: str, found: list, now: datetime, post: bool) -> None:
     when = "now" if minutes <= 1 else f"in {minutes:.0f} min"
     msg = render(found, True, f"⏰ First game tips off {when}!")
     print(msg)
-    if post:
-        post_to_discord(msg)
+    if not post:
+        return  # a test run: don't mark the day as sent
+    post_to_discord(msg)
     marker.parent.mkdir(parents=True, exist_ok=True)
     marker.write_text(now.isoformat(), encoding="utf-8")
     print(f"Wrote {marker.name}")
