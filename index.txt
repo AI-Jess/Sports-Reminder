@@ -1,0 +1,8 @@
+page1: 429 text/html; charset=utf-8 https://varsity.startribune.com/schools/woodbury/girls-basketball
+  <- https://varsity.startribune.com/schools/woodbury/girls-basketball
+page2: 200 text/html; charset=utf-8 https://www.maxpreps.com/mn/woodbury/woodbury-royals/basketball/girls/schedule/
+  <- https://www.maxpreps.com/mn/woodbury/woodbury-royals/basketball/girls/schedule/
+page3: 404 text/html; charset=UTF-8 https://www.si.com/high-school/stats/minnesota/basketball/teams/woodbury
+  <- https://www.si.com/high-school/stats/minnesota/basketball/teams/woodbury
+page4: 202 text/html; charset=UTF-8 https://www.gobound.com/mn/mshsl/girlsbasketball/2026-27/teams/woodbury
+  <- https://www.gobound.com/mn/mshsl/girlsbasketball/2026-27/teams/woodbury
