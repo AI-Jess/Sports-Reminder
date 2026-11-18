@@ -1,13 +1,14 @@
 # Sports Reminder 🏀
 
-Daily reminders for women's college basketball and WNBA games — posted to our Discord channel and texted to the group chat. Fully automatic, free, and edited from one settings file.
+Daily reminders for women's college basketball, WNBA and Woodbury Royals girls' high school basketball games — posted to our Discord channel and texted to the group chat. Fully automatic, free, and edited from one settings file.
 
 ## How it works
 
 ```mermaid
 flowchart LR
     CRON["⏰ cron-job.org<br/>6:30 AM + every 15 min<br/>10 AM–9:45 PM CT"]
-    ESPN[("ESPN<br/>schedule feed")]
+    ESPN[("ESPN<br/>college + WNBA")]
+    MP[("MaxPreps<br/>Woodbury HS")]
     SET["⚙️ settings.json<br/>teams · leagues · rounds"]
 
     subgraph GH["GitHub (this repo)"]
@@ -25,6 +26,7 @@ flowchart LR
     CRON -->|triggers| PRE
     SET --> MORN & PRE
     ESPN --> MORN & PRE
+    MP --> MORN & PRE
     MORN -->|"🏀 lineup + game links"| DISC
     MORN -->|saves| MSG
     PRE -->|"⏰ first game soon! + links"| DISC
@@ -68,6 +70,7 @@ Set in [`settings.json`](settings.json):
 |---|---|---|
 | College | UConn, USC, South Carolina, LSU, Notre Dame | Every NCAA tournament game from the **Sweet 16** on |
 | WNBA | Fever, Wings, Lynx | **Every playoff game** |
+| Woodbury Royals (HS) | Every girls' varsity game, from MaxPreps | — |
 
 College teams show their AP Top 25 ranking (seed during the tournament).
 
@@ -100,6 +103,7 @@ Edit [`settings.json`](settings.json) on GitHub (pencil icon) or ask Claude. Not
 | Change pregame lead time | `pregame_minutes_before` |
 | Turn rankings off | `"show_rankings": false` |
 | Add a league (e.g. NBA) | one more block in `leagues` |
+| Follow another high school team | copy the Woodbury block; set its MaxPreps schedule URL and `school_id` |
 
 **Check any date:** Actions → **Daily reminder** → **Run workflow** → enter a date, untick **Post to Discord**. The result shows on the run page.
 
@@ -109,6 +113,7 @@ Edit [`settings.json`](settings.json) on GitHub (pencil icon) or ask Claude. Not
 |---|---|---|
 | Discord works, no texts | Phone key expired | New key (Setup 2), paste into the Shortcut header |
 | Nothing anywhere | cron-job.org key expired or job failed | Check cron-job.org history; new key (Setup 6) |
+| Woodbury games missing (others fine) | MaxPreps changed its page or blocked the job | The run log shows `WARNING: couldn't check Woodbury`; ask Claude to fix |
 | Texts arrive as a file | Shortcut sending the dictionary, not the text | Send must use **Message** = Dictionary Value `text` |
 
 Keys to renew before they expire: **Hoops Shortcut** (phone) and **cron-job trigger** (cron-job.org).
