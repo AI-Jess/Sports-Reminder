@@ -1,9 +1,9 @@
 {
-  "title": "🏀 Women's hoops today",
+  "title": "🏀 Hoops today",
   "pregame_minutes_before": 10,
   "leagues": [
     {
-      "label": "College",
+      "label": "Women's NCAA",
       "espn_path": "basketball/womens-college-basketball",
       "extra_params": "groups=50&limit=300",
       "my_teams": [
@@ -39,7 +39,7 @@
       }
     },
     {
-      "label": "Woodbury Royals (HS)",
+      "label": "Girls' High School · Woodbury Royals",
       "source": "maxpreps",
       "team_name": "Woodbury",
       "maxpreps_schedule": "https://www.maxpreps.com/mn/woodbury/woodbury-royals/basketball/girls/schedule/",

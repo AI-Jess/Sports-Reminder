@@ -49,11 +49,11 @@ sequenceDiagram
     Note over C,F: 6:30 AM
     C->>G: Start morning job
     G->>G: Check ESPN for our teams + big games
-    G->>D: 🏀 Women's hoops today (linked matchups)
+    G->>D: 🏀 Hoops today (linked matchups)
     G->>G: Save today's message
     Note over C,F: 8:00 AM
     P->>G: Get today's message
-    P->>F: 🏀 Women's hoops today
+    P->>F: 🏀 Hoops today
     Note over C,F: Every 15 min, 10 AM–9:45 PM
     C->>G: Start pregame check
     G->>G: First game within ~25 min? Already sent today?
@@ -68,9 +68,9 @@ Set in [`settings.json`](settings.json):
 
 | League | Our teams (all season) | Plus, for everyone |
 |---|---|---|
-| College | UConn, USC, South Carolina, LSU, Notre Dame | Every NCAA tournament game from the **Sweet 16** on |
+| Women's NCAA | UConn, USC, South Carolina, LSU, Notre Dame | Every NCAA tournament game from the **Sweet 16** on |
 | WNBA | Fever, Wings, Lynx | **Every playoff game** |
-| Woodbury Royals (HS) | Every girls' varsity game: live from MaxPreps, plus a saved copy of the official Bound schedule for days MaxPreps is missing | Section playoffs |
+| Girls' High School · Woodbury Royals | Every girls' varsity game: live from MaxPreps, plus a saved copy of the official Bound schedule for days MaxPreps is missing | Section playoffs |
 
 College teams show their AP Top 25 ranking (seed during the tournament).
 
@@ -78,9 +78,9 @@ College teams show their AP Top 25 ranking (seed during the tournament).
 
 **Morning text** (real output, Nov 10, 2026):
 ```
-🏀 Women's hoops today
+🏀 Hoops today
 
-College
+Women's NCAA
 • #13 Notre Dame vs Detroit Mercy — 6:00 PM CT · ACCNX
 • #9 LSU vs McNeese — 7:00 PM CT · SECN+
 • #3 USC vs Charleston — 9:30 PM CT · BTN
