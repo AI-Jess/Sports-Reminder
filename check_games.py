@@ -164,49 +164,50 @@ def maxpreps_season(team: dict) -> list:
 
 
 def maxpreps_games(team: dict, date: str, debug: bool) -> list:
-    """Woodbury's games that day: live from MaxPreps, plus any game on a day
-    MaxPreps doesn't list yet, from the schedule saved in settings.json."""
+    """Woodbury's games that day. The saved Bound schedule (official) wins;
+    MaxPreps fills in only days the saved schedule has no game. When MaxPreps
+    has the same game, its game page is used as the link."""
     day = f"{date[:4]}-{date[4:6]}-{date[6:]}"
-    games = []
     try:
-        season = maxpreps_season(team)
-    except Exception as e:  # noqa: BLE001 — fall back to the saved schedule
+        season = [g for g in maxpreps_season(team) if g["start"].startswith(day)]
+    except Exception as e:  # noqa: BLE001 — the saved schedule still works
         print(f"WARNING: MaxPreps unavailable for {team['label']} ({type(e).__name__}: {e}); "
-              "using the saved schedule")
+              "using the saved schedule only")
         season = []
-    for g in season:
-        if not g["start"].startswith(day):
-            continue
-        tip = datetime.fromisoformat(g["start"]).replace(tzinfo=CENTRAL)
-        if debug:
-            print(f"  [{team['label']}] MaxPreps {g}")
-        games.append({
-            "tip": tip,
-            "prefix": "",
-            "matchup": f"{team['team_name']} vs {g['opponent']}",
-            "time": tip.strftime("%-I:%M %p") + " CT",
-            "tv": "🏠 Home" if g["home"] else f"Away @ {g['opponent']}",
-            "link": g["link"],
-        })
+    mp_link = {g["opponent"]: g["link"] for g in season if g.get("link")}
 
     snap = team.get("schedule_snapshot") or {}
-    if not games:  # MaxPreps has nothing that day → use the saved schedule
-        for g in snap.get("games", []):
-            if g["date"] != day:
-                continue
-            tip = datetime.fromisoformat(f"{g['date']}T{g['time']}").replace(tzinfo=CENTRAL)
+    games = []
+    for g in snap.get("games", []):
+        if g["date"] != day:
+            continue
+        tip = datetime.fromisoformat(f"{g['date']}T{g['time']}").replace(tzinfo=CENTRAL)
+        if debug:
+            print(f"  [{team['label']}] Bound {g}")
+        site = {"home": "🏠 Home", "away": f"Away @ {g['opponent']}"}.get(g["site"], "Neutral site")
+        note = g.get("note", "")
+        is_section = note.startswith("Section")
+        games.append({
+            "tip": tip,
+            "prefix": f"🏆 {note}: " if is_section else "",
+            "matchup": f"{team['team_name']} vs {g['opponent']}",
+            "time": tip.strftime("%-I:%M %p") + " CT",
+            "tv": site if is_section or not note else f"{site} · {note}",
+            "link": mp_link.get(g["opponent"]) or snap.get("source"),
+        })
+
+    if not games:  # nothing saved for this day → use MaxPreps (e.g. a newly added game)
+        for g in season:
+            tip = datetime.fromisoformat(g["start"]).replace(tzinfo=CENTRAL)
             if debug:
-                print(f"  [{team['label']}] saved {g}")
-            site = {"home": "🏠 Home", "away": f"Away @ {g['opponent']}"}.get(g["site"], "Neutral site")
-            note = g.get("note", "")
-            is_section = note.startswith("Section")
+                print(f"  [{team['label']}] MaxPreps {g}")
             games.append({
                 "tip": tip,
-                "prefix": f"🏆 {note}: " if is_section else "",
+                "prefix": "",
                 "matchup": f"{team['team_name']} vs {g['opponent']}",
                 "time": tip.strftime("%-I:%M %p") + " CT",
-                "tv": site if is_section or not note else f"{site} · {note}",
-                "link": snap.get("source"),
+                "tv": "🏠 Home" if g["home"] else f"Away @ {g['opponent']}",
+                "link": g["link"],
             })
     return sorted(games, key=lambda g: g["tip"])
 

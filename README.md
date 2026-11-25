@@ -70,7 +70,7 @@ Set in [`settings.json`](settings.json):
 |---|---|---|
 | Women's NCAA | UConn, USC, South Carolina, LSU, Notre Dame | Every NCAA tournament game from the **Sweet 16** on |
 | WNBA | Fever, Wings, Lynx | **Every playoff game** |
-| Girls' High School · Woodbury Royals | Every girls' varsity game: live from MaxPreps, plus a saved copy of the official Bound schedule for days MaxPreps is missing | Section playoffs |
+| Girls' High School · Woodbury Royals | Every girls' varsity game: from a saved copy of the official Bound schedule (takes priority), with MaxPreps filling any day it's missing | Section playoffs |
 
 College teams show their AP Top 25 ranking (seed during the tournament).
 

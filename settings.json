@@ -47,7 +47,7 @@
       "schedule_snapshot": {
         "source": "https://www.gobound.com/mn/mshsl/girlsbasketball/2026-27/woodbury/v/schedule",
         "saved": "2026-11-17",
-        "note": "Copied from Bound (official), which blocks automated checks. Used for any day MaxPreps doesn't list. Update if the schedule changes.",
+        "note": "Copied from Bound (official), which blocks automated checks. Takes priority over MaxPreps; MaxPreps is used only for days with no game here. Update if the schedule changes.",
         "games": [
           {
             "date": "2026-11-25",
